@@ -34,8 +34,6 @@ def save_q_values(Q, filename):
         save_q_values(Q, filename)
     except:
         # if file doesn't exist write as normal
-        open(filename, 'w')
-
         with open(filename, 'w') as f:
             f.write("cart_pos,cart_vel,pole_angle,pole_vel,action_0_value,action_1_value\n")
             for state in Q.keys():
@@ -60,3 +58,34 @@ def load_q_values(filename):
             Q[state] = np.array([float(action_0_value), float(action_1_value)])
 
     return Q
+
+def save_array(returns, filename):
+    try: 
+        # check if file exists
+        open(filename, 'r')
+
+        # if it does, increment the filename
+        filename, file_extension = filename.split('.')
+        filename_num = filename.split('_')[-1]
+
+        if filename_num.isdigit():
+            print(filename_num)
+            filename = filename.replace("_" + filename_num, "")
+            filename_num = int(filename_num) + 1
+            filename = filename + f"_{filename_num}." + file_extension
+        else:
+            filename = filename + "_1." + file_extension
+
+        # recursively call save_q_values with new filename to make sure new file also doesnt exist
+        save_returns(Q, filename)
+    except:
+        # if file doesn't exist write as normal
+        with open(filename, 'w') as f:
+            for i in range(len(returns)):
+                f.write(f"{returns[i]},")
+
+def load_array(filename):
+    with open(filename, 'r') as f:
+        lines = f.readlines()
+        returns = [float(line) for line in lines[0].split(',')[:-1]]
+    return returns
