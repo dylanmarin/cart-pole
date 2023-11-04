@@ -58,3 +58,24 @@ def plot_returns(
     plt.show
 
 
+
+def plot_returns_different_agents(
+    all_returns,
+    labels,
+):
+    fig, axes = plt.subplots(1)
+    fig.set_figheight(5)
+    fig.set_figwidth(25)
+
+    colors = ["blue", "red", "green", "orange", "purple"]
+
+    for i, returns in enumerate(all_returns):
+        axes.plot(returns, label=labels[i], color=colors[i])
+
+    axes.set_xlabel("Episodes")
+    axes.set_ylabel("Discounted Reward Achieved")
+    axes.legend()
+
+    plt.show
+
+
