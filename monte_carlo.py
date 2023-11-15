@@ -316,8 +316,7 @@ def off_policy_mc_control(
 
     """
     Q = defaultdict(lambda: np.zeros(env.action_space.n))
-    # N = defaultdict(lambda: np.zeros(env.action_space.n))
-    C = defaultdict(lambda: 0)
+    C = defaultdict(lambda: np.zeros(env.action_space.n))
 
     behavior_policy = create_epsilon_policy(Q, epsilon)
     optimal_policy = create_policy(Q)
@@ -346,20 +345,19 @@ def off_policy_mc_control(
 
             # Note there is no need to update the policy here directly.
             # By updating Q, the policy will automatically be updated.
-
             C[current_state][current_action] = C[current_state][current_action] + W
-            N[current_state][current_action] += 1
+
             Q[current_state][current_action] = Q[current_state][current_action] + (W/C[current_state][current_action]) * (G - Q[current_state][current_action])
 
             if current_action != optimal_policy(current_state):
-                continue
+                break
             
-            # epsilon/2 is 1/(b(a|s)) because if we aren't taking the argmax
+            # 1 / (epsilon/2) is 1/(b(a|s)) because if we aren't taking the argmax
             # then the behavior policy chose this aciton with a 1/2 epsilon chance
-            W = W * (epsilon / 2)
+            W = W * (1/(epsilon / 2))
 
             
-    return Q, policy, returns, episode_lengths
+    return Q, optimal_policy, returns, episode_lengths
 
 
 def create_policy(Q: defaultdict) -> Callable:
@@ -413,8 +411,12 @@ def create_epsilon_policy(Q: defaultdict, epsilon: float) -> Callable:
                 elif action_values[action] == best_action_value:
                     best_actions.append(action)
 
-            # choose random action from best actions
-            action = np.random.choice(best_actions)
+
+            if len(best_actions) == 0:
+                action = np.argmax(Q[state]).item()
+            else:
+                # choose random action from best actions
+                action = np.random.choice(best_actions)
 
         return action
 

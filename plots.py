@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-def plot_single_iteration_returns(returns):
+def plot_single_iteration_returns(returns, y_label="Discounted Reward Achieved"):
     fig, axes = plt.subplots(1)
     fig.set_figheight(5)
     fig.set_figwidth(25)
@@ -9,7 +9,7 @@ def plot_single_iteration_returns(returns):
     axes.plot(returns)
 
     axes.set_xlabel("Episodes")
-    axes.set_ylabel("Discounted Reward Achieved")
+    axes.set_ylabel(y_label)
     axes.legend()
 
     plt.show
