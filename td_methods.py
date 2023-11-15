@@ -8,10 +8,11 @@ from discretize import discretize
 
 def sarsa(
     env: gym.Env,
-    num_steps: int,
     gamma: float,
     epsilon: float,
     step_size: float,
+    num_steps: int = 1,
+    num_eps: Optional[int] = None, 
     reward_func=None,
 ):
     """SARSA algorithm.
@@ -30,10 +31,24 @@ def sarsa(
     episode_lengths = []
     step_count = 0
 
-    pbar = tqdm(total=num_steps)
+
+    if num_eps is not None:
+        pbar = tqdm(total=num_eps)
+    else:
+        pbar = tqdm(total=num_steps)
+
+
 
     # loop until we have taken num_steps steps
-    while step_count < num_steps:
+    while True:
+        if num_eps is None:
+            if step_count < num_steps:
+                break
+        elif num_eps is not None:
+            if ep_num > num_eps:
+                break
+
+
         # start new episode
         state = tuple(discretize(env.reset())[0])
 
@@ -67,12 +82,17 @@ def sarsa(
             state = next_state
             action = next_action
 
-            pbar.update(1)
+            if num_eps is None:
+                pbar.update(1)
+
+
             step_count += 1
             if step_count == num_steps:
                 break
 
         ep_num += 1
+        if num_eps is not None:
+            pbar.update(1)
 
     pbar.close()
     return Q, policy, episode_lengths
@@ -80,24 +100,38 @@ def sarsa(
 
 def nstep_sarsa(
     env: gym.Env,
-    num_steps: int,
     gamma: float,
     epsilon: float,
     step_size: float,
     n: int,
+    num_steps: int = 1,
+    num_eps: Optional[int] = None, 
     reward_func=None,
 ):
     Q = defaultdict(lambda: np.zeros(env.action_space.n))
     policy = create_epsilon_policy(Q, epsilon)
 
-    ep_num = 1
+    ep_num = 0
     ep_lengths = []
     step_count = 0
 
-    pbar = tqdm(total=num_steps)
+    if num_eps is not None:
+        pbar = tqdm(total=num_eps)
+    else:
+        pbar = tqdm(total=num_steps)
 
     # loop until we have taken num_steps steps
     while True:
+        if num_eps is None:
+            if step_count < num_steps:
+                break
+
+        elif num_eps is not None:
+            if ep_num > num_eps:
+                break
+
+        ep_num += 1
+            
         # start new episode
         state =  tuple(discretize(env.reset())[0])
 
@@ -167,21 +201,28 @@ def nstep_sarsa(
                 action = next_action
 
                 step_count += 1
-                pbar.update(1)
+                if num_eps is None:
+                    pbar.update(1)
 
             else:
                 # if we are done and if tao is at the second to last experience, break
                 # we don't need to update the terminal state
                 if tao == len(experiences) - 2:
                     ep_lengths.append(len(experiences))
+                    
+                    if num_eps is not None:
+                    
+                        pbar.update(1)
 
                     break
 
+            if num_eps is None:
+                if step_count == num_steps:
+                    break
+
+        if num_eps is None:
             if step_count == num_steps:
                 break
-
-        if step_count == num_steps:
-            break
 
     pbar.close()
     return Q, policy, ep_lengths
@@ -197,10 +238,11 @@ def _calculate_return_from_episode(steps, gamma):
 
 def exp_sarsa(
     env: gym.Env,
-    num_steps: int,
     gamma: float,
     epsilon: float,
     step_size: float,
+    num_steps: int = 1,
+    num_eps: Optional[int] = None, 
     reward_func=None,
 ):
     """Expected SARSA
@@ -216,19 +258,35 @@ def exp_sarsa(
     Q = defaultdict(lambda: np.zeros(env.action_space.n))
     policy = create_epsilon_policy(Q, epsilon)
 
-    ep_num = 1
+    ep_num = 0
     # episode_nums = []
     ep_lengths = []
     step_count = 0
 
+    if num_eps is not None:
+        pbar = tqdm(total=num_eps)
+    else:
+        pbar = tqdm(total=num_steps)
+
     # loop until we have taken num_steps steps
-    while step_count < num_steps:
+    while True:
+        if num_eps is None:
+            if step_count < num_steps:
+                break
+        elif num_eps is not None:
+            if ep_num > num_eps:
+                break
+        
         # start new episode
         state = tuple(discretize(env.reset())[0])
 
         action = policy(state)
         done = False
         ep_length =0
+
+        ep_num += 1
+        if num_eps is not None:
+            pbar.update(1)
 
         # for each step in episode
         while not done:
@@ -259,20 +317,20 @@ def exp_sarsa(
 
             # episode_nums.append(ep_num)
             step_count += 1
-            if step_count == num_steps:
-                break
+            if num_eps is None:
+                pbar.update(1)
 
-        ep_num += 1
 
     return Q, policy, ep_lengths
 
 
 def q_learning(
     env: gym.Env,
-    num_steps: int,
     gamma: float,
     epsilon: float,
     step_size: float,
+    num_steps: int = 1,
+    num_eps: Optional[int] = None, 
 ):
     """Q-learning
 
@@ -287,20 +345,32 @@ def q_learning(
     Q = defaultdict(lambda: np.zeros(env.action_space.n))
     policy = create_epsilon_policy(Q, epsilon)
 
-    pbar = tqdm(total=num_steps)
+    if num_eps is not None:
+        pbar = tqdm(total=num_eps)
+    else:
+        pbar = tqdm(total=num_steps)
 
-    # ep_num = 1
+    ep_num = 0
+
     # episode_nums = []
     ep_lengths = []
 
     step_count = 0
     # loop until we have taken num_steps steps
-    while step_count < num_steps:
+    while True:
+        if num_eps is None:
+            if step_count < num_steps:
+                break
+        elif num_eps is not None:
+            if ep_num > num_eps:
+                break
+
         # start new episode
         state = tuple(discretize(env.reset())[0])
         action = policy(state)
         done = False
         ep_length = 0
+
 
         # for each step in episode
         while not done:
@@ -324,13 +394,17 @@ def q_learning(
 
             # episode_nums.append(ep_num)
             step_count += 1
-            pbar.update(1)
+            if num_eps is None:
+                pbar.update(1)
 
             if step_count == num_steps:
                 break
 
-        # ep_num += 1
+        if num_eps is not None:
+            pbar.update(1)
+        ep_num += 1
 
+    print(step_count)
     pbar.close()
     return Q, policy, ep_lengths
 
