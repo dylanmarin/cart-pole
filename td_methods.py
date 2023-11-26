@@ -42,7 +42,7 @@ def sarsa(
     # loop until we have taken num_steps steps
     while True:
         if num_eps is None:
-            if step_count < num_steps:
+            if step_count > num_steps:
                 break
         elif num_eps is not None:
             if ep_num > num_eps:
@@ -122,15 +122,17 @@ def nstep_sarsa(
 
     # loop until we have taken num_steps steps
     while True:
+        ep_num += 1
+
         if num_eps is None:
-            if step_count < num_steps:
+            if step_count > num_steps:
                 break
 
         elif num_eps is not None:
             if ep_num > num_eps:
                 break
+        
 
-        ep_num += 1
             
         # start new episode
         state =  tuple(discretize(env.reset())[0])
@@ -141,8 +143,9 @@ def nstep_sarsa(
         experiences = []
         tao = -1
 
-        # for each step in episode
         while True:
+        # for each step in episode
+
             if not done:
                 # take a step
                 next_state, reward, new_done, _, _ = discretize(env.step(action))
@@ -193,6 +196,29 @@ def nstep_sarsa(
                     Q[state_to_update][action_to_update] = Q[state_to_update][
                         action_to_update
                     ] + step_size * (G - Q[state_to_update][action_to_update])
+            elif done:
+                # if we are done and there were less steps than n, then we need to update all states now
+                for tao in range(len(experiences)):
+                    num_steps += 1
+                    if num_eps is None:
+                        pbar.update(1)
+
+                    
+                    # always the last n experiences since n > len(experiences)
+                    relevant_experiences = experiences[tao:]
+                    
+                    # G = _calculate_return_from_episode(relevant_experiences, gamma, tao==0)
+                    G = _calculate_return_from_episode(relevant_experiences, gamma)
+
+                    # the last state should always be terminal since n < len(experiences)
+                    state_to_update, action_to_update, _, terminal = experiences[tao]
+                    if not terminal:
+                        Q[state_to_update][action_to_update] = Q[state_to_update][
+                            action_to_update
+                        ] + step_size * (G - Q[state_to_update][action_to_update])
+            
+
+                break
 
             # if the episode hasn't terminated, take another step
             if not done:
@@ -208,18 +234,19 @@ def nstep_sarsa(
                 # if we are done and if tao is at the second to last experience, break
                 # we don't need to update the terminal state
                 if tao == len(experiences) - 2:
-                    ep_lengths.append(len(experiences))
                     
-                    if num_eps is not None:
-                    
-                        pbar.update(1)
-
                     break
+
 
             if num_eps is None:
                 if step_count == num_steps:
                     break
 
+        
+        ep_lengths.append(len(experiences))
+        if num_eps is not None:
+            pbar.update(1)
+        
         if num_eps is None:
             if step_count == num_steps:
                 break
@@ -228,11 +255,16 @@ def nstep_sarsa(
     return Q, policy, ep_lengths
 
 
-def _calculate_return_from_episode(steps, gamma):
+def _calculate_return_from_episode(steps, gamma, print_return=False):
     G = 0
-    for i in range(len(steps)):
+
+
+    for i in range(len(steps) - 1, -1, -1):
         _, _, reward, _ = steps[i]
-        G += (gamma**i) * reward
+        G = gamma * G + reward
+
+    if print_return:
+        print(G)
     return G
 
 
@@ -271,7 +303,7 @@ def exp_sarsa(
     # loop until we have taken num_steps steps
     while True:
         if num_eps is None:
-            if step_count < num_steps:
+            if step_count > num_steps:
                 break
         elif num_eps is not None:
             if ep_num > num_eps:
@@ -359,7 +391,7 @@ def q_learning(
     # loop until we have taken num_steps steps
     while True:
         if num_eps is None:
-            if step_count < num_steps:
+            if step_count > num_steps:
                 break
         elif num_eps is not None:
             if ep_num > num_eps:
@@ -404,7 +436,6 @@ def q_learning(
             pbar.update(1)
         ep_num += 1
 
-    print(step_count)
     pbar.close()
     return Q, policy, ep_lengths
 

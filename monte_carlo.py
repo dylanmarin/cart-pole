@@ -236,6 +236,8 @@ def on_policy_mc_control_epsilon_soft(
             G = gamma * G + current_reward
             if t == 0:
                 returns[ep] = G
+                # print(G)
+            
 
             first_visit = True
             for i in range(t):
@@ -244,7 +246,7 @@ def on_policy_mc_control_epsilon_soft(
                     # skip for now
                     first_visit = False
                     break
-            
+
             # if state at time t is the first visit
             # Note there is no need to update the policy here directly.
             # By updating Q, the policy will automatically be updated.
