@@ -106,9 +106,10 @@ def plot_episode_lengths(
 
         if error_range:
             std = np.std(episode_lengths, axis=0)
-            std = std[:len(mean)]
-
             std_error = std * (1 / np.sqrt(len(episode_lengths)))
+        
+            if smoothing > 1:
+                std_error = np.convolve(std_error, np.ones(smoothing), "valid") / smoothing
 
             axes.fill_between(
                 np.arange(len(mean)),

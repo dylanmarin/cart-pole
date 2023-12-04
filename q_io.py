@@ -77,7 +77,7 @@ def save_array(returns, filename):
             filename = filename + "_1." + file_extension
 
         # recursively call save_q_values with new filename to make sure new file also doesnt exist
-        save_returns(Q, filename)
+        save_array(returns, filename)
     except:
         # if file doesn't exist write as normal
         with open(filename, 'w') as f:
