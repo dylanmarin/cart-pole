@@ -162,3 +162,4 @@ cython_debug/
 
 .DS_Store
 checkpoint_cnn_big.pt
+small_cnn_checkpoint.pt
