@@ -431,6 +431,61 @@ def run_iterations(env, Q, n=10):
 
 
 
+def on_policy_mc_control_plain(
+    env: gym.Env, num_episodes: int, gamma: float,
+) -> Tuple[defaultdict, Callable]:
+    """
+    On-policy Monte Carlo control with optimistic initialization for cart-pole
+
+    Args:
+        env (gym.Env): a Gym API compatible environment
+        num_episodes (int): Number of episodes
+        gamma (float): Discount factor of MDP
+    """
+    # We use defaultdicts here for both Q and N for convenience. The states will be the keys and the values will be numpy arrays with length = num actions
+
+    # initialize
+    Q = defaultdict(lambda: np.zeros(env.action_space.n))
+    N = defaultdict(lambda: np.zeros(env.action_space.n))
+
+    returns = np.zeros(num_episodes)
+    episode_lengths = np.zeros(num_episodes)
+
+    # If the state was seen, use the greedy action using Q values.
+    # Else, default to the original policy of sticking to 20 or 21.
+    policy = create_policy(Q)
+
+    for ep in trange(num_episodes, desc="Episode"):
+        episode = generate_episode(env, policy, es=True)
+        episode_lengths[ep] = len(episode)
+
+        G = 0
+        for t in range(len(episode) - 1, -1, -1):
+            # Update V and N here according to first visit MC
+            current_state, current_action, current_reward = episode[t]
+
+            G = gamma * G + current_reward
+
+            if t == 0:
+                returns[ep] = G
+
+            first_visit = True
+            for i in range(t):
+                # if state at time t isn't the first visit
+                if episode[i][0] == current_state and episode[i][1] == current_action:
+                    # skip for now
+                    first_visit = False
+                    break
+
+            # if state at time t is the first visit
+            if first_visit:
+                N[current_state][current_action] += 1
+                Q[current_state][current_action] = Q[current_state][current_action] + \
+                    (1/N[current_state][current_action]) * \
+                    (G - Q[current_state][current_action])
+
+
+    return Q, policy, returns, episode_lengths
 
 
 

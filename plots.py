@@ -85,10 +85,13 @@ def plot_episode_lengths(
     labels,
     smoothing = 1,
     error_range=True,
+    width=25,
+    height=5,
+    fontsize=20,
 ):
     fig, axes = plt.subplots(1)
-    fig.set_figheight(5)
-    fig.set_figwidth(25)
+    fig.set_figheight(height)
+    fig.set_figwidth(width)
 
     colors = ["blue", "red", "green", "orange", "purple", "black", "pink"]
 
@@ -128,6 +131,6 @@ def plot_episode_lengths(
 
     axes.set_xlabel("Episodes")
     axes.set_ylabel("Avg Episode Length")
-    axes.legend()
+    axes.legend(fontsize=fontsize)
 
     plt.show
